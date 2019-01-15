@@ -18,7 +18,7 @@ function runner(iter) {
 
   do {
     result = iter.next();
-    const value = result.value;
+    const { value } = result;
     let realValue = null;
 
     if (value === undefined) {
