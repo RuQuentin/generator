@@ -16,7 +16,7 @@ function runner(iter) {
   let promiseChain = new Promise(resolve => resolve());
 
 
-  do {
+  while (true) {
     result = iter.next();
     const { value } = result;
     let realValue = null;
@@ -47,8 +47,7 @@ function runner(iter) {
       outputArr.push(realValue);
       return outputArr
     });
-
-  } while (result.done === false)
+  }
 
   return promiseChain;
 }
