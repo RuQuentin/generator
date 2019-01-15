@@ -25,31 +25,32 @@ function runner(iter) {
       break;
     }
 
-    if (!isPromise(value) && !isFunction(value)) {
-      promiseChain = promiseChain.then(() => {
-        realValue = value;
-      });
-    }
+    promiseChain = promiseChain.then(() => {
+      if (!isPromise(value) && !isFunction(value)) {
+          realValue = value;
+          return realValue;
+      }
 
-    if (isPromise(value)) {
-      promiseChain = promiseChain.then(() => {
+      if (isPromise(value)) {
         return value.then(data => {
-        realValue = data;
-        })
-      });
-    }
+          realValue = data;
+        });
+      }
 
-    if (isFunction(value)) {
-      promiseChain = promiseChain.then(() => {
+      if (isFunction(value)) {
         realValue = value();
-      });
-    }
+        return realValue;
+      }
+    });
 
-    promiseChain = promiseChain.then(() => outputArr.push(realValue));
+    promiseChain = promiseChain.then(() => {
+      outputArr.push(realValue);
+      return outputArr
+    });
 
   } while (result.done === false)
 
-  return new Promise(resolve => resolve(outputArr))
+  return promiseChain;
 }
 
 
