@@ -1,23 +1,21 @@
-// 'use strict'
+'use strict'
 
 function runner(iter) {
-  return new Promise (resolve => {
-    function isPromise(value) {
-      return value instanceof Promise;
-    }
-  
-    function isFunction(value) {
-      return typeof value === 'function';
-    }
+  function isPromise(value) {
+    return value instanceof Promise;
+  }
 
+  function isFunction(value) {
+    return typeof value === 'function';
+  }
+
+  return new Promise (resolve => {
     const outputArr = [];
     let realValue = null;
     let result = iter.next();
-    let done = false;
 
     function iterate(result) {
       const { value } = result;
-      done = result.done;
 
       if (value === undefined) {
         resolve(outputArr)
@@ -25,12 +23,12 @@ function runner(iter) {
       } else if (!isPromise(value) && !isFunction(value)) {
         realValue = value;
       } else if (isPromise(value)) {
-
-        value.then(data => {
-        result['value'] = data;
-        return result;
+        value
+          .then(data => {
+            result['value'] = data;
+            return result;
         })
-        .then(result => iterate(result))
+          .then(result => iterate(result))
 
       } else if (isFunction(value)) {
         realValue = value();
@@ -38,11 +36,6 @@ function runner(iter) {
 
       if (realValue !== null) {
         outputArr.push(realValue);
-  
-        if (done === true) {
-          resolve(outputArr)
-        }
-  
         result = iter.next(realValue);
         realValue = null;
   
@@ -54,36 +47,7 @@ function runner(iter) {
   })
 }
 
-
-// function sum(a, b) {
-//   return a + b;
-// }
-
-// const val = 20;
-
-// const prom = new Promise(res => {
-//   setTimeout(res, 1000, 10)
-// });
-
-
-// function *gen() {
-//     const a = yield () => sum(1, 2);
-//     const b = yield prom;
-//     const c = yield val;
-//     const d = yield prom;
-//     const e = yield val;
-//     const f = yield () => sum(2, 5);
-//     console.log(a, b, c, d, e, f)
-// }
-
-// const iter = gen();
-
-// // console.log(iter.next());
-// // console.log(iter.next());
-// // console.log(iter.next());
-// // console.log(iter.next());
-
-// runner(gen()).then(console.log)
+// ===================================
 
 function sum() {
   console.log(1);
