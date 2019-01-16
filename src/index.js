@@ -1,10 +1,6 @@
-'use strict'
+// 'use strict'
 
 function runner(iter) {
-
-  const outputArr = [];
-  let result = null;
-
   function isPromise(value) {
     return value instanceof Promise;
   }
@@ -13,43 +9,64 @@ function runner(iter) {
     return typeof value === 'function';
   }
 
-  let promiseChain = new Promise(resolve => resolve());
+  let promiseChain = Promise.resolve();
 
+  const outputArr = [];
+  // let result = null;
+  let realValue = null;
+  // let done = false;
 
-  while (true) {
-    result = iter.next();
-    const { value } = result;
-    let realValue = null;
+  function addThen(realValue) {
+    promiseChain = new Promise( resolve => {
+      // console.log(realValue)
+      result = iter.next(realValue);
+      const { value } = result;
+      // const { done } = result;
+            
+      if (value === undefined) {
+        // console.log('value = undefined')
+      } else if (!isPromise(value) && !isFunction(value)) {
+        // console.log('value')
+        realValue = value;
+      } else if (isPromise(value)) {
+        // console.log('promise')
 
-    if (value === undefined) {
-      break;
-    }
+        resolve(value.then(realValue => {
+          return {result, realValue};
+        }
+        ))
 
-    promiseChain = promiseChain.then(() => {
-      if (!isPromise(value) && !isFunction(value)) {
-          realValue = value;
-          return realValue;
-      }
-
-      if (isPromise(value)) {
-        return value.then(data => {
-          realValue = data;
-        });
-      }
-
-      if (isFunction(value)) {
+      } else if (isFunction(value)) {
+        // console.log('function')
         realValue = value();
-        return realValue;
       }
-    });
 
-    promiseChain = promiseChain.then(() => {
-      outputArr.push(realValue);
-      return outputArr
-    });
-  }
+      resolve({result, realValue});
+    })
 
-  return promiseChain;
+    .then( data => {
+      outputArr.push(data['realValue']);
+
+      if (data['result'].done) {
+        return outputArr;
+      }
+
+      return data['realValue'];
+    })
+
+    .then ( data => {
+      if (data === outputArr) {
+        return data;
+      }
+
+      addThen(data)
+    })
+  };
+
+  addThen(realValue);
+
+
+  return promiseChain.then(data => data);
 }
 
 
@@ -58,7 +75,6 @@ function sum(a, b) {
 }
 
 const val = 20;
-
 
 const prom = new Promise(res => {
   setTimeout(res, 1000, 10)
@@ -72,9 +88,10 @@ function *gen() {
     const d = yield prom;
     const e = yield val;
     const f = yield () => sum(2, 5);
+    console.log(a, b, c, d, e, f)
 }
 
-// const iter = gen();
+const iter = gen();
 
 // console.log(iter.next());
 // console.log(iter.next());
@@ -82,4 +99,3 @@ function *gen() {
 // console.log(iter.next());
 
 runner(gen()).then(console.log)
-
