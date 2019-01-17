@@ -1,46 +1,44 @@
 'use strict'
 
+function isPromise(value) {
+  return value instanceof Promise;
+}
+
+function isFunction(value) {
+  return typeof value === 'function';
+}
+
 function runner(iter) {
-  function isPromise(value) {
-    return value instanceof Promise;
-  }
-
-  function isFunction(value) {
-    return typeof value === 'function';
-  }
-
   return new Promise (resolve => {
     const outputArr = [];
-    let realValue = null;
     let result = iter.next();
 
     function iterate(result) {
       const { value } = result;
 
       if (value === undefined) {
-        resolve(outputArr)
-        
-      } else if (!isPromise(value) && !isFunction(value)) {
-        realValue = value;
-      } else if (isPromise(value)) {
+        return resolve(outputArr)
+      }
+      
+      if (!isPromise(value) && !isFunction(value)) {
+        outputArr.push(value);
+      }
+      
+      if (isPromise(value)) {
         value
-          .then(data => {
-            result['value'] = data;
-            return result;
+          .then(realValue => {
+            outputArr.push(realValue);
+            result = iter.next(realValue);
+            iterate(result);
         })
-          .then(result => iterate(result))
-
-      } else if (isFunction(value)) {
-        realValue = value();
+      }
+      
+      if (isFunction(value)) {
+        outputArr.push(value());
       }
 
-      if (realValue !== null) {
-        outputArr.push(realValue);
-        result = iter.next(realValue);
-        realValue = null;
-  
-        iterate(result);
-      } 
+      result = iter.next(outputArr[outputArr.length - 1]);
+      return iterate(result);
     };
 
     iterate(result);
